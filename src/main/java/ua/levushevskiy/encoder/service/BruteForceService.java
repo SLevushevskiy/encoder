@@ -1,16 +1,12 @@
 package ua.levushevskiy.encoder.service;
 
-import io.swagger.models.auth.In;
 import org.springframework.stereotype.Service;
 import ua.levushevskiy.encoder.model.ErrorModel;
 import ua.levushevskiy.encoder.model.Round;
+import ua.levushevskiy.encoder.model.dto.response.MessageResponse;
 
-import java.math.BigDecimal;
-import java.nio.charset.Charset;
 import java.util.*;
 import java.util.stream.Collectors;
-
-import static java.nio.charset.StandardCharsets.ISO_8859_1;
 
 
 @Service
@@ -81,7 +77,7 @@ public class BruteForceService {
         String tmp = "";
         for (int i = 0; i <= message.length() - 8; i += 8) {
             tmp = message.substring(i, i + 3);
-            tmp =  tmp+ " "+ message.substring(i + 4, i + 7);
+            tmp = tmp + " " + message.substring(i + 4, i + 7);
             String value = tmp;
             result.append(alphabet.entrySet()
                     .stream()
@@ -193,5 +189,40 @@ public class BruteForceService {
         alphabet.put("ю", "011 110");
         alphabet.put("я", "011 111");
         alphabet.put(" ", "100 000");
+    }
+
+    public List<MessageResponse> test(String messageRequest, List<Integer> percents) {
+        List<MessageResponse> messageResponses = new ArrayList<>();
+        for (Integer percent : percents) {
+            MessageResponse messageResponse;
+            String message = encodeMessage(messageRequest);
+            String errorMessage = buildError(message, percent);
+            long startTime = System.nanoTime();
+            String result = decodeMessage(errorMessage);
+            long finish = System.nanoTime();
+            messageResponse = new MessageResponse(result);
+            messageResponse.setTime((finish - startTime) + " nanoTime");
+            messageResponses.add(messageResponse);
+        }
+        return messageResponses;
+    }
+
+    private String buildError(String message, Integer percent) {
+        StringBuilder stringBuilder = new StringBuilder(message);
+        List<Integer> errorList = new ArrayList<>();
+
+        int error = message.length() * percent / 100;
+        while (error > 0) {
+            Random random = new Random(System.currentTimeMillis());
+            int index = random.nextInt(message.length());
+            while (errorList.contains(index)) {
+                index = random.nextInt(message.length());
+            }
+            errorList.add(index);
+            char ch = message.charAt(index) == '0' ? '1' : '0';
+            stringBuilder.setCharAt(index, ch);
+            error--;
+        }
+        return stringBuilder.toString();
     }
 }

@@ -52,5 +52,10 @@ public class HammingController {
         return ResponseEntity.ok(new MessageResponse(bruteForceService.decodeMessage(messageRequest)));
     }
 
+    @PostMapping("/brute")
+    public ResponseEntity<List<MessageResponse>> testBrute(@RequestParam String messageRequest, @RequestParam List<Integer> percent) {
+        return ResponseEntity.ok(bruteForceService.test(messageRequest,percent));
+    }
+
 
 }
