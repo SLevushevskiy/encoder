@@ -5,6 +5,7 @@ import ua.levushevskiy.encoder.model.ErrorModel;
 import ua.levushevskiy.encoder.model.Round;
 import ua.levushevskiy.encoder.model.dto.response.MessageResponse;
 
+import java.math.BigDecimal;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -16,13 +17,23 @@ public class BruteForceService {
     public String encodeMessage(String message) {
         StringBuilder controlCode = new StringBuilder();
         message = stringToByte(message);
-        Long num = Long.parseLong(message, 2);
-        controlCode.append(byteMask((int) (num % 11)));
-        controlCode.append(byteMask((int) (num % 13)));
-        controlCode.append(byteMask((int) (num % 14)));
-        controlCode.append(byteMask((int) (num % 15)));
+        BigDecimal num = parseTo(message);
+        controlCode.append(byteMask((num.remainder(new BigDecimal(11))).intValue()));
+        controlCode.append(byteMask((num.remainder(new BigDecimal(13))).intValue()));
+        controlCode.append(byteMask((num.remainder(new BigDecimal(14))).intValue()));
+        controlCode.append(byteMask((num.remainder(new BigDecimal(15))).intValue()));
         controlCode.append(message);
         return controlCode.toString();
+    }
+
+    private BigDecimal parseTo(String message) {
+        BigDecimal result = new BigDecimal(0);
+        for (int i = message.length() - 1, pow = 0; i >= 0; i--, pow++) {
+            if (message.charAt(i) != '0') {
+                result = result.add(new BigDecimal(Math.pow(2, pow)));
+            }
+        }
+        return result;
     }
 
     public String decodeMessage(String message) {
@@ -58,14 +69,16 @@ public class BruteForceService {
             }
             for (int i = 0; i < roundSize; i++) {
                 String fixedMes = fixed(blocks, errorModels, rounds.get(i));
-                Long num = Long.parseLong(fixedMes, 2);
-                if (mod11 == (int) (num % 11) && mod13 == (int) (num % 13) && mod14 == (int) (num % 14) && mod15 == (int) (num % 15)) {
-                    return cryptToText(mes);
+                BigDecimal num = parseTo(fixedMes);
+                if (mod11 == (num.remainder(new BigDecimal(11))).intValue() && mod13 == (num.remainder(new BigDecimal(13))).intValue()
+                        && mod14 == (num.remainder(new BigDecimal(14))).intValue() && mod15 == (num.remainder(new BigDecimal(15))).intValue()) {
+                    return cryptToText(fixedMes);
                 }
             }
         } else {
-            Long num = Long.parseLong(mes, 2);
-            if (mod11 == (int) (num % 11) && mod13 == (int) (num % 13) && mod14 == (int) (num % 14) && mod15 == (int) (num % 15)) {
+            BigDecimal num = parseTo(mes);
+            if (mod11 == (num.remainder(new BigDecimal(11))).intValue() && mod13 == (num.remainder(new BigDecimal(13))).intValue()
+                    && mod14 == (num.remainder(new BigDecimal(14))).intValue() && mod15 == (num.remainder(new BigDecimal(15))).intValue()) {
                 return cryptToText(mes);
             }
         }
@@ -85,7 +98,7 @@ public class BruteForceService {
                     .map(Map.Entry::getKey)
                     .collect(Collectors.toSet()));
         }
-        return result.toString();
+        return result.toString().replace("[", "").replace("]", "");
     }
 
     private String fixed(List<String> blocks, List<ErrorModel> errorModels, Round round) {
