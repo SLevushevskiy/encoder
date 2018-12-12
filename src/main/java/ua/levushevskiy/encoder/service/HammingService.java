@@ -1,18 +1,33 @@
 package ua.levushevskiy.encoder.service;
 
-import io.swagger.models.auth.In;
 import org.springframework.stereotype.Service;
-import org.w3c.dom.stylesheets.LinkStyle;
+import org.springframework.util.StopWatch;
+import ua.levushevskiy.encoder.model.dto.response.MessageResponse;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
+import java.util.Timer;
 
 @Service
 public class HammingService {
 
+    private final Integer BLOCK_SIZE = 11;
+    private final Integer ENC_BLOCK_SIZE = 15;
+
     public String encodeMessage(String message) {
         message = stringToBinary(message);
-        return encode(message);
+        List<String> blocks = new ArrayList<>();
+        int i;
+        for (i = 0; i <= message.length() - BLOCK_SIZE; i += BLOCK_SIZE) {
+            blocks.add(message.substring(i, i + BLOCK_SIZE));
+        }
+        if (i < message.length()) {
+            blocks.add(message.substring(i));
+        }
+        StringBuilder result = new StringBuilder();
+        blocks.forEach(block -> result.append(encode(block)));
+        return result.toString();
     }
 
     private String stringToBinary(String string) {
@@ -47,7 +62,7 @@ public class HammingService {
     private char[] decodeByVectorSum(char[] chars) {
         List<Integer> vectorSum = buildVectorSum(chars);
         String index = "";
-        for (int i = vectorSum.size()-1; i >=0 ; i--) {
+        for (int i = vectorSum.size() - 1; i >= 0; i--) {
             index += vectorSum.get(i);
         }
         int indx = Integer.parseInt(index, 2);
@@ -78,8 +93,15 @@ public class HammingService {
     }
 
     public String decodeMessage(String message) {
-        message = decode(message);
-        return binaryToString(message);
+        int i;
+        StringBuilder result = new StringBuilder();
+        for (i = 0; i <= message.length() - ENC_BLOCK_SIZE; i += ENC_BLOCK_SIZE) {
+            result.append(decode(message.substring(i, i + ENC_BLOCK_SIZE)));
+        }
+        if (i < message.length()) {
+            result.append(decode(message.substring(i)));
+        }
+        return binaryToString(result.toString());
     }
 
     private String decode(String message) {
@@ -113,5 +135,40 @@ public class HammingService {
         }
         result.append((char) Integer.parseInt(binary.toString(), 2));
         return result.toString();
+    }
+
+    public List<MessageResponse> test(String messageRequest, List<Integer> percents) {
+        List<MessageResponse> messageResponses = new ArrayList<>();
+        for (Integer percent : percents) {
+            MessageResponse messageResponse;
+            String message = encodeMessage(messageRequest);
+            String errorMessage = buildError(message, percent);
+            long startTime = System.nanoTime();
+            String result = decodeMessage(errorMessage);
+            long finish = System.nanoTime();
+            messageResponse = new MessageResponse(result);
+            messageResponse.setTime((finish - startTime) + " nanoTime");
+            messageResponses.add(messageResponse);
+        }
+        return messageResponses;
+    }
+
+    private String buildError(String message, Integer percent) {
+        StringBuilder stringBuilder = new StringBuilder(message);
+        List<Integer> errorList = new ArrayList<>();
+
+        int error = message.length() * percent / 100;
+        while (error > 0) {
+            Random random = new Random(System.currentTimeMillis());
+            int index = random.nextInt(message.length());
+            while (errorList.contains(index)) {
+                index = random.nextInt(message.length());
+            }
+            errorList.add(index);
+            char ch = message.charAt(index) == '0' ? '1' : '0';
+            stringBuilder.setCharAt(index, ch);
+            error--;
+        }
+        return stringBuilder.toString();
     }
 }
