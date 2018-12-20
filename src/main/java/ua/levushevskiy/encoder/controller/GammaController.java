@@ -20,12 +20,22 @@ public class GammaController {
 
     @PostMapping("/gamma/encode")
     public ResponseEntity<MessageResponse> encode(@RequestParam String key, @RequestParam String messageRequest) {
-        return ResponseEntity.ok(new MessageResponse(gammaService.encode(messageRequest,key)));
+        return ResponseEntity.ok(new MessageResponse(gammaService.encode(messageRequest, key)));
+    }
+
+    @PostMapping("/gamma/period")
+    public ResponseEntity<MessageResponse> period(@RequestParam long num) {
+        return ResponseEntity.ok(new MessageResponse(gammaService.period(num)));
+    }
+
+    @PostMapping("/gamma/generate")
+    public ResponseEntity<MessageResponse> generate(@RequestParam Integer countNum, @RequestParam Long startValue) {
+        return ResponseEntity.ok(new MessageResponse(gammaService.generateGamma(countNum, startValue)));
     }
 
     @PostMapping("/gamma/decode")
     public ResponseEntity<MessageResponse> decode(@RequestParam String key, @RequestParam String messageRequest) {
-        return ResponseEntity.ok(new MessageResponse(gammaService.decode(messageRequest,key)));
+        return ResponseEntity.ok(new MessageResponse(gammaService.decode(messageRequest, key)));
     }
 
 

@@ -23,6 +23,12 @@ public class AlphabetController {
 
     @PostMapping("/alphabet/crypt")
     public ResponseEntity<MessageResponse> crypt(@RequestParam String key, @RequestParam String messageRequest, @RequestParam(required = false) Boolean encode) {
-        return ResponseEntity.ok(new MessageResponse(alphabetService.crypt(key, messageRequest,encode)));
+        return ResponseEntity.ok(new MessageResponse(alphabetService.crypt(key, messageRequest, encode)));
     }
+
+    @PostMapping("/alphabet/")
+    public ResponseEntity hack(@RequestParam String messageRequest) {
+        return ResponseEntity.ok(alphabetService.hack(messageRequest));
+    }
+
 }
